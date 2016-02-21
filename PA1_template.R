@@ -1,88 +1,76 @@
----
-title: 'Reproducible Research: Peer Assessment 1'
-output:
-  pdf_document: default
-  html_document:
-    keep_md: yes
----
-## Preparation
-Clean environment
-```{r}
 rm(list=ls())
-```
-Load necessary packages 
-```{r message=FALSE, warning=FALSE}
+
 library(lubridate)
 library(ggplot2)
 library(dplyr)
-```
-Set working directory
-```{r}
-setwd("C:/Data Science/5. Reproducible Research/Assignment1/RepData_PeerAssessment1")
-```
-Read data into memory
-```{r}
-stepData <- read.csv("activity.csv")
-```
 
-## Analysis
-###Total number of steps taken per day
-The numbers are summarized in a new dataframe called "dailySteps" produced by the code below.
-```{r}
+setwd("C:/Data Science/5. Reproducible Research/Assignment1/RepData_PeerAssessment1")
+
+#Read data into memory
+
+stepData <- read.csv("activity.csv")
+
+#Prepare data for analysis by 1. adding zeros to "interval" until all have 4 characters, 2. pasting 
+#"date" and "interval" together and 3. formatting the date and time information. 
+
+#stepData$datetime <- parse_date_time(paste(stepData$date, sprintf("%04d", stepData$interval)), "y-m-d Hm")
+
+#Without missing values
+#1.	Calculate the total number of steps taken per day
+
 dailySteps <- summarise(group_by(stepData, date), 
                         "totalsteps" = sum(steps, na.rm=TRUE))
-```
 
-###Histogram of the total number of steps taken each day
-Using the dataframe produced above, the following code is applied to make the requested histogram.
-```{r message=FALSE}
+#2.	If you do not understand the difference between a histogram and a barplot, research the difference 
+#between them. Make a histogram of the total number of steps taken each day
+
 print(qplot(dailySteps$totalsteps, geom="histogram", 
       xlab = "total steps per day", 
       ylab = "count of days when it happened",
       main = "Histogram of total steps per day, n = 61"))
-```
 
-###Mean and median of the total number of steps taken per day
-For this calculation still the "dailySteps" dataframe is used. The mean and the median are slightly different. 
-```{r}
+#3.	Calculate and report the mean and median of the total number of steps taken per day
+
 print(paste("mean:", round(mean(dailySteps$totalsteps), digits=0)))
 print(paste("median:", median(dailySteps$totalsteps)))
-```
 
-###Time series plot of the 5-minute interval and the average number of steps taken
-The steps are averaged across all days.
-First a new dataframe is produced called "intervalSteps" then the plot is made.
-```{r}
+#4.	Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number 
+#of steps taken, averaged across all days (y-axis)
+
 intervalSteps <- summarise(group_by(stepData, interval), 
                            "average steps in interval" = mean(steps, na.rm=TRUE))
 print(qplot(intervalSteps$interval, intervalSteps$`average steps in interval`, data=intervalSteps, geom="line",
             xlab = "hours-minutes of the day", 
             ylab = "average number of steps per 5-minute interval",
             main = "Time series of the 5-minute interval and the average number of steps taken"))
-```
 
-###The 5-minute interval which contains the maximum number of steps
-The most active time interval is shown to be around 17 o'clock in the afternoon.
-```{r}
+#5.	Which 5-minute interval, on average across all the days in the dataset, contains the maximum number 
+#of steps?
+
 intervalSteps$interval[max(intervalSteps$`average steps in interval`)]
-```
 
-###The total number of missing values
-The dataset contains some significant number of NAs shown by the code below.
-```{r}
+#With missing values
+#1.  Calculate and report the total number of missing values in the dataset (i.e. the total number of 
+#rows with NAs)
+
 length(stepData$steps[is.na(stepData$steps)])
-```
 
-###New dataset with the missing data filled in
-For filling in all of the missing values in the dataset the "intervalSteps" dataframe is used which contains the means for all 5-minute intervals excluding NA-s. These means replace missing values in the modified dataframe called "stepDataMod".
-```{r message=FALSE, warning=FALSE}
+#2.	Devise a strategy for filling in all of the missing values in the dataset. The strategy does not 
+#need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 
+#5-minute interval, etc.
+
+#I use intervalSteps containing the mean for all 5-minute intervals exclusing NA-s 
+
+#3.	Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
 stepDataMod <- left_join(stepData, intervalSteps, by=rownames(interval))
 stepDataMod$steps[is.na(stepDataMod$steps)] <- stepDataMod$`average steps in interval`
-```
 
-###Histogram of the total number of steps taken each day and the mean and median in the new dataset with the missing data filled in
-These values differ from the estimates from the original dataset.
-```{r message=FALSE, warning=FALSE}
+#4.	Make a histogram of the total number of steps taken each day and Calculate and report the mean and 
+#median total number of steps taken per day. Do these values differ from the estimates from the first 
+#part of the assignment? What is the impact of imputing missing data on the estimates of the total daily 
+#number of steps?
+
 dailyStepsMod <- summarise(group_by(stepDataMod, date), 
                         "totalsteps" = sum(steps, na.rm=TRUE))
 
@@ -93,22 +81,22 @@ main = "Modified histogram of total steps per day, n = 61"))
 
 print(paste("modified mean:", round(mean(dailyStepsMod$totalsteps), digits=0)))
 print(paste("modified median:", round(median(dailyStepsMod$totalsteps), digits=0)))
-```
 
-###Create a new factor variable in the dataset with two levels - "weekday" and "weekend"
-Two new columns are added to the dataset: the name of the days and the factor variable.
-```{r}
+#5.	Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating 
+#whether a given date is a weekday or weekend day.
+
 stepData$day <- weekdays(as.Date(stepData$date))
 for (i in 1:length(stepData$day)){
 if (stepData$day[i] %in% c("Saturday","Sunday")) {stepData$daytype[i] <- "weekend"} 
   else {stepData$daytype[i] <- "weekday"}
 }
 stepData$daytype <- as.factor(stepData$daytype)
-```
 
-###Time series plot of the 5-minute interval and the average number of steps taken in weekday days or weekend days
-The code below produces the requested plots.
-```{r}
+#6.	Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) 
+#and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See 
+#the README file in the GitHub repository to see an example of what this plot should look like using 
+#simulated data.
+
 daytypeIntervalSteps <- summarise(group_by(stepData, daytype, interval), 
                                   "average steps in interval" = mean(steps, na.rm=TRUE))
 print(qplot(daytypeIntervalSteps$interval, daytypeIntervalSteps$`average steps in interval`, 
@@ -116,4 +104,3 @@ print(qplot(daytypeIntervalSteps$interval, daytypeIntervalSteps$`average steps i
             xlab = "hours-minutes of the day", 
             ylab = "average number of steps per 5-minute interval",
             main = "Time series of the 5-minute interval and the average number of steps taken"))
-```
