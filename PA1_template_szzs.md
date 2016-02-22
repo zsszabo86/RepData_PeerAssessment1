@@ -30,6 +30,7 @@ The numbers are summarized in a new dataframe called "dailySteps" produced by th
 ```r
 dailySteps <- summarise(group_by(stepData, date), 
                         "totalsteps" = sum(steps, na.rm=TRUE))
+dailySteps <- filter(dailySteps, dailySteps$totalsteps!=0)
 ```
 
 ###Histogram of the total number of steps taken each day
@@ -52,7 +53,7 @@ print(paste("mean:", round(mean(dailySteps$totalsteps), digits=0)))
 ```
 
 ```
-## [1] "mean: 9354"
+## [1] "mean: 10766"
 ```
 
 ```r
@@ -60,7 +61,7 @@ print(paste("median:", median(dailySteps$totalsteps)))
 ```
 
 ```
-## [1] "median: 10395"
+## [1] "median: 10765"
 ```
 
 ##What is the average daily activity pattern?
@@ -80,14 +81,15 @@ qplot(intervalSteps$interval, intervalSteps$`average steps in interval`, data=in
 ![](PA1_template_szzs_files/figure-html/unnamed-chunk-8-1.png) 
 
 ###The 5-minute interval which contains the maximum number of steps
-The most active time interval is shown to be around 17 o'clock in the afternoon.
+The most active time interval is shown to be in the one below.
 
 ```r
-intervalSteps$interval[max(intervalSteps$`average steps in interval`)]
+intervalSteps$interval[intervalSteps$`average steps in interval`==
+                         max(intervalSteps$`average steps in interval`)]
 ```
 
 ```
-## [1] 1705
+## [1] 835
 ```
 
 ##Imputing missing values
